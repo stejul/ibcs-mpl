@@ -3,7 +3,16 @@ from typing import Sequence
 
 import matplotlib.figure
 
-from ibcs_mpl.composites.canvas import Box, Node, OperatorNode, Edge, CanvasStyle, draw_canvas
+from ibcs_mpl.composites.canvas import (
+    Box,
+    Node,
+    OperatorNode,
+    Edge,
+    CanvasStyle,
+    draw_canvas,
+    title_block_h_from_pt,
+)
+from ibcs_mpl.composites.units import pt_to_fig_y
 from ibcs_mpl.charts.columns import SingleColumnChart
 from ibcs_mpl.theme import IBCSTheme
 from ibcs_mpl.types import ScenarioCode
@@ -36,7 +45,7 @@ class ROATreeData:
 
 @dataclass(frozen=True)
 class ROATreeLayout:
-    """All boxes and operator positions in figure coords."""
+    """All boxes and operator positions in figure coords [0..1]."""
 
     roa: Box
     ros: Box
@@ -51,35 +60,73 @@ class ROATreeLayout:
 
     @staticmethod
     def default() -> "ROATreeLayout":
-        roa = Box(0.04, 0.26, 0.35, 0.42)
+        # ── Column positions ─────────────────────────────────────────────────
+        # Three columns with comfortable horizontal gaps.
+        #
+        #   col_left  col_mid   col_right
+        #   [0.03]    [0.42]    [0.68]
+        #
+        # The left ("root") box is dominant in height – it spans nearly the
+        # full usable figure height to make ROA visually prominent.
+        # The middle column has two equal boxes; the right column has three.
+        # All boxes share the same top (0.92) and bottom (0.06) boundary so
+        # horizontal alignment of axes is clean.
 
-        ros = Box(0.41, 0.52, 0.24, 0.24)
-        turn = Box(0.41, 0.20, 0.24, 0.24)
+        TOP = 0.92
+        BOT = 0.06
+        TOTAL_H = TOP - BOT  # 0.86
 
-        ret = Box(0.68, 0.70, 0.29, 0.20)
-        sales = Box(0.68, 0.44, 0.29, 0.20)
-        assets = Box(0.68, 0.18, 0.29, 0.20)
+        # ── Left column: one tall dominant box ───────────────────────────────
+        roa = Box(left=0.03, bottom=BOT, width=0.34, height=TOTAL_H)
 
-        # 1) MUL circle: centered between ROS and TURN vertically
-        y_mul = (ros.mid_left()[1] + turn.mid_left()[1]) / 2.0
+        # ── Middle column: two equal boxes with a gap ─────────────────────
+        MID_L = 0.42
+        MID_W = 0.22
+        MID_GAP = 0.04  # gap between the two middle boxes
+        mid_each_h = (TOTAL_H - MID_GAP) / 2.0
+        ros = Box(left=MID_L, bottom=BOT + mid_each_h + MID_GAP, width=MID_W, height=mid_each_h)
+        turn = Box(left=MID_L, bottom=BOT, width=MID_W, height=mid_each_h)
 
-        # place it in the horizontal gap between ROA and middle column
-        # 45% into the gap from ROA right edge towards ROS left edge:
-        x_mul = roa.mid_right()[0] + 0.45 * (ros.mid_left()[0] - roa.mid_right()[0])
-
-        op_mul = OperatorNode(id="mul", kind="mul", center=(x_mul, y_mul), radius_pt=11, gap_pt=4)
-
-        # 2) DIV circle for ROS: centered vertically between Return and Sales
-        y_div_ros = (ret.mid_left()[1] + sales.mid_left()[1]) / 2.0
-        x_div = ros.mid_right()[0] + 0.45 * (ret.mid_left()[0] - ros.mid_right()[0])
-        op_div_ros = OperatorNode(
-            id="div_ros", kind="div", center=(x_div, y_div_ros), radius_pt=11, gap_pt=4
+        # ── Right column: three equal boxes with gaps ─────────────────────
+        RIGHT_L = 0.69
+        RIGHT_W = 0.29
+        RIGHT_GAP = 0.03  # gap between the three right boxes
+        right_each_h = (TOTAL_H - 2 * RIGHT_GAP) / 3.0
+        ret = Box(
+            left=RIGHT_L,
+            bottom=BOT + 2 * (right_each_h + RIGHT_GAP),
+            width=RIGHT_W,
+            height=right_each_h,
         )
+        sales = Box(
+            left=RIGHT_L,
+            bottom=BOT + right_each_h + RIGHT_GAP,
+            width=RIGHT_W,
+            height=right_each_h,
+        )
+        assets = Box(left=RIGHT_L, bottom=BOT, width=RIGHT_W, height=right_each_h)
 
-        # 3) DIV circle for Turnover: centered vertically between Sales and Assets
-        y_div_turn = (sales.mid_left()[1] + assets.mid_left()[1]) / 2.0
+        # ── Operator circles ──────────────────────────────────────────────
+        # Every operator is placed at the EXACT mid-y of its source box so
+        # that the trunk segment (source.mid_right → operator left boundary)
+        # is perfectly horizontal.  X is the midpoint of the inter-column gap.
+
+        # × : source = ROA, gap between ROA right edge and mid-col left edge.
+        x_mul = (roa.mid_right()[0] + ros.mid_left()[0]) / 2.0
+        y_mul = roa.mid_right()[1]  # == ROA.mid_y
+        op_mul = OperatorNode(id="mul", kind="mul", center=(x_mul, y_mul), radius_pt=12, gap_pt=5)
+
+        # ÷ circles: source = ROS and TURN respectively; gap between mid-col
+        # right edge and right-col left edge.
+        x_div = (ros.mid_right()[0] + ret.mid_left()[0]) / 2.0
+
+        # div_ros y aligns with ROS.mid_y so the ROS trunk is horizontal.
+        op_div_ros = OperatorNode(
+            id="div_ros", kind="div", center=(x_div, ros.mid_right()[1]), radius_pt=12, gap_pt=5
+        )
+        # div_turn y aligns with TURN.mid_y so the TURN trunk is horizontal.
         op_div_turn = OperatorNode(
-            id="div_turn", kind="div", center=(x_div, y_div_turn), radius_pt=11, gap_pt=4
+            id="div_turn", kind="div", center=(x_div, turn.mid_right()[1]), radius_pt=12, gap_pt=5
         )
 
         return ROATreeLayout(
@@ -95,6 +142,35 @@ class ROATreeLayout:
         )
 
 
+def _default_canvas_style(fig: matplotlib.figure.Figure, title_size_pt: float) -> CanvasStyle:
+    """
+    Build a CanvasStyle whose vertical padding is derived from the actual figure
+    height rather than hard-coded figure-fraction magic numbers.
+
+    - title_block_h: one text line of `title_size_pt` with 1.35× leading + 4 pt top pad
+    - inset_pad_bottom: enough room for x-tick labels at `label_size_pt` (≈ 6 pt)
+      plus 2 pt breathing room
+    - inset_pad_top: a small gap between the bars and the top of the axes area
+    - inset_pad_x: symmetric horizontal inset so bars don't touch the box edge
+    """
+    label_size_pt = title_size_pt - 2.0  # tick labels are a bit smaller than titles
+    title_block_h = title_block_h_from_pt(fig, title_size_pt)
+    inset_pad_bottom = pt_to_fig_y(fig, label_size_pt * 1.5 + 2.0)
+    inset_pad_top = pt_to_fig_y(fig, 3.0)
+    inset_pad_x = 0.008
+
+    return CanvasStyle(
+        frame_linewidth=0.8,
+        connector_linewidth=0.8,
+        title_size=int(title_size_pt),
+        inset_pad_x=inset_pad_x,
+        inset_pad_top=inset_pad_top,
+        inset_pad_bottom=inset_pad_bottom,
+        title_block_h=title_block_h,
+        title_pad_top=pt_to_fig_y(fig, 4.0),
+    )
+
+
 def build_roa_tree(
     fig: matplotlib.figure.Figure,
     data: ROATreeData,
@@ -103,29 +179,29 @@ def build_roa_tree(
     style: CanvasStyle | None = None,
 ) -> None:
     lay = layout or ROATreeLayout.default()
-    canvas_style = style or CanvasStyle(
-        frame_linewidth=1.0,
-        connector_linewidth=1.0,
-        title_size=9,
-        inset_pad_x=0.010,
-        inset_pad_top=0.002,
-        inset_pad_bottom=0.018,
-        title_block_h=0.030,
-        title_pad_top=0.012,
-    )
 
-    mini_theme = IBCSTheme(font_size=8, title_size=9, label_size=7)
+    # Title size used for node labels.  All padding is derived from this so
+    # the layout is consistent regardless of figure size.
+    TITLE_PT = 9.0
+    canvas_style = style or _default_canvas_style(fig, TITLE_PT)
+
+    # Per-column mini themes.
+    # The dominant left box is large enough for slightly bigger text.
+    # The three right-column boxes are the smallest – use tighter label size
+    # to keep tick labels readable without overlapping on 7 categories.
+    roa_theme = IBCSTheme(font_size=9, title_size=9, label_size=8)
+    mid_theme = IBCSTheme(font_size=8, title_size=9, label_size=7)
+    right_theme = IBCSTheme(font_size=7, title_size=9, label_size=6)
+
     no_labels = None
 
-    # Mini charts (you already have SingleColumnChart)
-    # Titles should be inside the node frame (canvas), so chart title can be blank.
     roa_chart = SingleColumnChart(
         title="",
         categories=data.years,
         values=data.roa_pct,
         scenario=data.scenario_roa,
         labels=no_labels,
-        theme=mini_theme,
+        theme=roa_theme,
     )
     ros_chart = SingleColumnChart(
         title="",
@@ -133,7 +209,7 @@ def build_roa_tree(
         values=data.ros_pct,
         scenario=data.scenario_ros,
         labels=no_labels,
-        theme=mini_theme,
+        theme=mid_theme,
     )
     turn_chart = SingleColumnChart(
         title="",
@@ -141,16 +217,15 @@ def build_roa_tree(
         values=data.asset_turnover,
         scenario=data.scenario_turn,
         labels=no_labels,
-        theme=mini_theme,
+        theme=mid_theme,
     )
-
     ret_chart = SingleColumnChart(
         title="",
         categories=data.years,
         values=data.return_meur,
         scenario=data.scenario_return,
         labels=no_labels,
-        theme=mini_theme,
+        theme=right_theme,
     )
     sales_chart = SingleColumnChart(
         title="",
@@ -158,7 +233,7 @@ def build_roa_tree(
         values=data.sales_meur,
         scenario=data.scenario_sales,
         labels=no_labels,
-        theme=mini_theme,
+        theme=right_theme,
     )
     assets_chart = SingleColumnChart(
         title="",
@@ -166,7 +241,7 @@ def build_roa_tree(
         values=data.assets_meur,
         scenario=data.scenario_assets,
         labels=no_labels,
-        theme=mini_theme,
+        theme=right_theme,
     )
 
     nodes = [
@@ -180,17 +255,16 @@ def build_roa_tree(
 
     operators = [lay.op_mul, lay.op_div_ros, lay.op_div_turn]
 
-    # Elbow connectors (via operator centers)
     edges = [
-        # ROA splits to ROS (upper) and Turnover (lower)
-        Edge("roa", "ros", op_id="mul", src_anchor=0.62, dst_anchor=0.55),
-        Edge("roa", "turn", op_id="mul", src_anchor=0.38, dst_anchor=0.45),
-        # ROS splits to Return (upper) and Sales (lower)
-        Edge("ros", "ret", op_id="div_ros", src_anchor=0.60, dst_anchor=0.55),
-        Edge("ros", "sales", op_id="div_ros", src_anchor=0.40, dst_anchor=0.50),
-        # Turnover splits to Sales (upper) and Assets (lower)
-        Edge("turn", "sales", op_id="div_turn", src_anchor=0.60, dst_anchor=0.45),
-        Edge("turn", "assets", op_id="div_turn", src_anchor=0.40, dst_anchor=0.50),
+        # ROA → × → ROS (upper) and TURN (lower)
+        Edge("roa", "ros", op_id="mul"),
+        Edge("roa", "turn", op_id="mul"),
+        # ROS → ÷ → Return (upper) and Sales (lower)
+        Edge("ros", "ret", op_id="div_ros"),
+        Edge("ros", "sales", op_id="div_ros"),
+        # TURN → ÷ → Sales (upper) and Assets (lower)
+        Edge("turn", "sales", op_id="div_turn"),
+        Edge("turn", "assets", op_id="div_turn"),
     ]
 
     draw_canvas(

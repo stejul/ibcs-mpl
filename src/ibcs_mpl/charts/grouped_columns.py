@@ -5,7 +5,7 @@ import matplotlib.axes
 import numpy as np
 
 from ibcs_mpl.charts.base import ChartBase
-from ibcs_mpl.charts.specs import CategorySeries
+from ibcs_mpl.charts.specs import GroupedScenarioSeries
 from ibcs_mpl.primitives import DataLabels
 from ibcs_mpl.theme import scenario_style
 from ibcs_mpl.types import ScenarioCode
@@ -23,10 +23,16 @@ class GroupedColumnChart(ChartBase):
 
     labels: DataLabels = DataLabels("{:,.0f}")
     overlap_shift_ratio: float = 0.22
+    show_reference_triangles: bool = False
 
     def draw(self, ax: matplotlib.axes.Axes) -> matplotlib.axes.Axes:
-        CategorySeries(categories=self.categories, values=self.primary_values).validate()
-        CategorySeries(categories=self.categories, values=self.reference_values).validate()
+        GroupedScenarioSeries(
+            categories=self.categories,
+            primary_values=self.primary_values,
+            reference_values=self.reference_values,
+            primary_scenario=self.primary_scenario,
+            reference_scenario=self.reference_scenario,
+        ).validate()
 
         self._prep(ax)
 
@@ -60,5 +66,18 @@ class GroupedColumnChart(ChartBase):
 
         ax.set_xticks(x, self.categories)
         self.labels.draw_above_bars(ax, x.tolist(), list(self.primary_values))
+
+        if self.show_reference_triangles:
+            for xi, ref_val in zip(x, self.reference_values, strict=True):
+                marker = "^" if ref_val >= 0 else "v"
+                ax.plot(
+                    xi - shift,
+                    ref_val,
+                    marker=marker,
+                    color=st_reference.edgecolor,
+                    markersize=7,
+                    linestyle="none",
+                    zorder=3,
+                )
 
         return ax

@@ -88,4 +88,4 @@ def test_roa_tree_layout_snapshot() -> None:
     digest = _roa_tree_signature(fig)
     plt.close(fig)
 
-    assert digest == "a35a8d282ae73e627688bf907e27e47859453f4282ba061f2194c00c790c1dee"
+    assert digest == "d20c0eada608efc71ce70f114c540cdd2f2979428e5a6c790024eede4107b7cc"

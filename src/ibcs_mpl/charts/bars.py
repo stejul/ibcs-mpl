@@ -5,7 +5,7 @@ import matplotlib.axes
 import numpy as np
 
 from ibcs_mpl.charts.base import ChartBase
-from ibcs_mpl.charts.specs import GroupedScenarioSeries, StackedSeries
+from ibcs_mpl.charts.specs import GroupedScenarioSeries, ScenarioSeries, StackedSeries
 from ibcs_mpl.primitives import DataLabels
 from ibcs_mpl.theme import scenario_style
 from ibcs_mpl.types import ScenarioCode
@@ -15,6 +15,63 @@ from ibcs_mpl.validation import validate_stacked_sign_consistency
 def _stack_colors(n: int) -> list[str]:
     shades = ["#2E2E2E", "#575757", "#808080", "#A5A5A5", "#C8C8C8", "#E1E1E1"]
     return [shades[idx % len(shades)] for idx in range(n)]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SingleBarChart(ChartBase):
+    categories: Sequence[str] = ()
+    values: Sequence[float] = ()
+    scenario: ScenarioCode = ScenarioCode.AC
+    labels: DataLabels | None = DataLabels("{:,.0f}")
+
+    @classmethod
+    def from_series(
+        cls,
+        *,
+        title: str,
+        series: ScenarioSeries,
+        subtitle: str | None = None,
+        labels: DataLabels | None = DataLabels("{:,.0f}"),
+    ) -> "SingleBarChart":
+        series.validate()
+        return cls(
+            title=title,
+            subtitle=subtitle,
+            categories=series.categories,
+            values=series.values,
+            scenario=series.scenario,
+            labels=labels,
+        )
+
+    def draw(self, ax: matplotlib.axes.Axes) -> matplotlib.axes.Axes:
+        ScenarioSeries(
+            categories=self.categories,
+            values=self.values,
+            scenario=self.scenario,
+        ).validate()
+
+        self._prep(ax)
+
+        y = np.arange(len(self.categories), dtype=float)
+        st = scenario_style(self.theme, self.scenario)
+
+        ax.barh(
+            y,
+            self.values,
+            height=self.theme.width_basic,
+            color=st.facecolor,
+            edgecolor=st.edgecolor,
+            linewidth=st.linewidth,
+            hatch=st.hatch,
+        )
+
+        ax.set_yticks(y, self.categories)
+        ax.invert_yaxis()
+
+        if self.labels is not None:
+            self.labels.draw_right_of_bars(ax, y.tolist(), list(self.values))
+
+        return ax
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -29,6 +86,7 @@ class GroupedBarChart(ChartBase):
 
     labels: DataLabels = DataLabels("{:,.0f}")
     overlap_shift_ratio: float = 0.22
+    show_reference_triangles: bool = False
 
     def draw(self, ax: matplotlib.axes.Axes) -> matplotlib.axes.Axes:
         GroupedScenarioSeries(
@@ -71,6 +129,20 @@ class GroupedBarChart(ChartBase):
 
         ax.set_yticks(y, self.categories)
         ax.invert_yaxis()
+
+        if self.show_reference_triangles:
+            for yi, ref_val in zip(y, self.reference_values, strict=True):
+                marker = ">" if ref_val >= 0 else "<"
+                ax.plot(
+                    ref_val,
+                    yi - shift,
+                    marker=marker,
+                    color=st_reference.edgecolor,
+                    markersize=7,
+                    linestyle="none",
+                    zorder=3,
+                )
+
         return ax
 
 

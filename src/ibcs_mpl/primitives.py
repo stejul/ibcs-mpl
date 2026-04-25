@@ -66,6 +66,26 @@ class DataLabels:
                 fontsize=9,
             )
 
+    def draw_right_of_bars(
+        self,
+        ax: matplotlib.axes.Axes,
+        y: Sequence[float],
+        x: Sequence[float],
+        pad: float = 3.0,
+    ) -> None:
+        for yi, xi in zip(y, x, strict=True):
+            ha = "left" if xi >= 0 else "right"
+            dx = pad if xi >= 0 else -pad
+            ax.annotate(
+                self.fmt.format(xi),
+                (xi, yi),
+                xytext=(dx, 0),
+                textcoords="offset points",
+                ha=ha,
+                va="center",
+                fontsize=9,
+            )
+
 
 def rect(
     x: float,

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from math import ceil
 from typing import Sequence, Any
 
+import matplotlib.axes
 import matplotlib.figure
 
 from ibcs_mpl.charts.base import Chart
@@ -72,6 +73,7 @@ def draw_small_multiples(
     charts: Sequence[Chart],
     *,
     layout: SmallMultiplesLayout = SmallMultiplesLayout(),
+    shared_ylim: tuple[float, float] | None = None,
 ) -> None:
     if len(charts) == 0:
         return
@@ -96,3 +98,12 @@ def draw_small_multiples(
         y = slot_top - slot_h
         ax = fig.add_axes([x, y, ax_w, ax_h])
         chart.draw(ax)
+        if shared_ylim is not None:
+            ax.set_ylim(*shared_ylim)
+
+
+def compute_shared_ylim(axes: Sequence[matplotlib.axes.Axes]) -> tuple[float, float]:
+    """Compute a common y-axis range covering all provided axes."""
+    all_mins = [ax.get_ylim()[0] for ax in axes]
+    all_maxs = [ax.get_ylim()[1] for ax in axes]
+    return (min(all_mins), max(all_maxs))

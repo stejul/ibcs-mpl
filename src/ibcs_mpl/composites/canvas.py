@@ -14,6 +14,17 @@ from ibcs_mpl.types import Point
 from ibcs_mpl.composites.units import pt_to_fig_x, pt_to_fig_y
 
 
+def title_block_h_from_pt(fig: matplotlib.figure.Figure, title_size_pt: float) -> float:
+    """
+    Compute the title-block height in figure-fraction from the font size in points.
+
+    Reserves: one line of text (title_size_pt * 1.35 leading) plus 4 pt top padding.
+    This replaces the hard-coded figure-fraction magic number so the result is
+    consistent across figure sizes.
+    """
+    return pt_to_fig_y(fig, title_size_pt * 1.35 + 4.0)
+
+
 @dataclass(frozen=True)
 class Box:
     """Figure-coordinates box [0..1]."""
@@ -74,8 +85,6 @@ class Edge:
     src: str
     dst: str
     op_id: str | None = None  # operator junction id; if None -> straight line
-    src_anchor: float = 0.5
-    dst_anchor: float = 0.5
 
 
 @dataclass(frozen=True)
@@ -118,19 +127,18 @@ def _ellipse_boundary_point(center: Point, toward: Point, rx: float, ry: float) 
     return (cx + dx * t, cy + dy * t)
 
 
-def _operator_attach_points(
-    fig: matplotlib.figure.Figure, src: Point, dst: Point, op: OperatorNode
-) -> tuple[Point, Point]:
+def _operator_h_boundaries(fig: matplotlib.figure.Figure, op: OperatorNode) -> tuple[Point, Point]:
     """
-    Compute where connectors should meet the operator circle boundary.
-    Important: we DO NOT draw any segment inside the circle.
+    Return the exact left and right horizontal boundary points of the operator
+    ellipse (including the gap clearance).  Used by the elbow router so that
+    trunk and branch segments start/end flush with the circle perimeter.
     """
     rx = pt_to_fig_x(fig, op.radius_pt + op.gap_pt)
     ry = pt_to_fig_y(fig, op.radius_pt + op.gap_pt)
-
-    p_src = _ellipse_boundary_point(op.center, src, rx, ry)
-    p_dst = _ellipse_boundary_point(op.center, dst, rx, ry)
-    return p_src, p_dst
+    cx, cy = op.center
+    left_pt = _ellipse_boundary_point(op.center, (cx - 1.0, cy), rx, ry)
+    right_pt = _ellipse_boundary_point(op.center, (cx + 1.0, cy), rx, ry)
+    return left_pt, right_pt
 
 
 def _draw_operator(fig: matplotlib.figure.Figure, op: OperatorNode, *, lw: float = 1.0) -> None:
@@ -216,27 +224,84 @@ def draw_canvas(
                 [a[1], b[1]],
                 transform=fig.transFigure,
                 linewidth=style.connector_linewidth,
+                color="black",
+                solid_capstyle="butt",
             )
         )
 
+    # Group edges by operator so we draw each trunk exactly once.
+    # op_id -> list of (src_node, dst_node)
+    from collections import defaultdict
+
+    op_edges: dict[str, list[tuple[Node, Node]]] = defaultdict(list)
+    direct_edges: list[tuple[Node, Node]] = []
+
     for e in edges:
-        src = node_map[e.src]
-        dst = node_map[e.dst]
+        src_node = node_map[e.src]
+        dst_node = node_map[e.dst]
+        if e.op_id is not None and e.op_id in op_map:
+            op_edges[e.op_id].append((src_node, dst_node))
+        else:
+            direct_edges.append((src_node, dst_node))
 
-        a = src.box.right_at(e.src_anchor)
-        b = dst.box.left_at(e.dst_anchor)
+    # Direct edges (no operator): horizontal trunk then vertical then horizontal
+    # (simple two-segment elbow using the x midpoint as the bend column).
+    for src_node, dst_node in direct_edges:
+        a = src_node.box.mid_right()
+        b = dst_node.box.mid_left()
+        mid_x = (a[0] + b[0]) / 2.0
+        add_segment(a, (mid_x, a[1]))
+        add_segment((mid_x, a[1]), (mid_x, b[1]))
+        add_segment((mid_x, b[1]), b)
 
-        if e.op_id is None:
-            add_segment(a, b)
-            continue
+    # Operator edges: orthogonal H-tree routing.
+    #
+    # Each operator connects ONE source box (the "trunk" side) to ONE OR MORE
+    # destination boxes (the "branch" side).  All edges sharing the same op_id
+    # must have the same source box, so we derive it from the first entry.
+    #
+    # Routing pattern (all segments axis-aligned):
+    #
+    #   TRUNK:
+    #     src.mid_right  ──h──►  op_left_boundary
+    #
+    #   BRANCH per destination:
+    #     op_right_boundary  ──h──►  (corner_x, op_y)
+    #                                      │ v
+    #                                (corner_x, dst_mid_y)
+    #                                      ──h──►  dst.mid_left
+    #
+    # corner_x is the horizontal midpoint between the operator right boundary
+    # and the destination box left edge.  When multiple destinations share the
+    # same op_id they share the same corner_x (all dst boxes have the same left
+    # edge in the ROA tree) so the vertical segments are neatly stacked.
 
-        op = op_map.get(e.op_id)
-        if op is None:
-            add_segment(a, b)
-            continue
+    for op_id, pairs in op_edges.items():
+        op = op_map[op_id]
+        op_left, op_right = _operator_h_boundaries(fig, op)
 
-        p_src, p_dst = _operator_attach_points(fig, a, b, op)
+        # Derive the single source node (all pairs for one op share one source).
+        src_node = pairs[0][0]
+        src_pt = src_node.box.mid_right()
 
-        # dont draw p_src -> p_dst (would cross the operator symbol)
-        add_segment(a, p_src)
-        add_segment(p_dst, b)
+        # TRUNK: horizontal from source mid-right to operator left boundary.
+        # The operator is always positioned at the source box mid_y so this
+        # segment is perfectly horizontal.
+        add_segment(src_pt, op_left)
+
+        # Compute corner_x once: midpoint between op_right.x and dst.left.
+        # All destinations in this group share the same left edge.
+        dst_left_x = pairs[0][1].box.left
+        corner_x = op_right[0] + 0.5 * (dst_left_x - op_right[0])
+
+        # BRANCHES: right boundary → corner column → dst mid_y → dst mid_left.
+        for _, dst_node in pairs:
+            dst_pt = dst_node.box.mid_left()
+            op_y = op_right[1]  # operator centre y (same as src mid_y)
+
+            # Horizontal stub out of the operator to the corner column.
+            add_segment(op_right, (corner_x, op_y))
+            # Vertical run to destination y.
+            add_segment((corner_x, op_y), (corner_x, dst_pt[1]))
+            # Horizontal run into the destination box.
+            add_segment((corner_x, dst_pt[1]), dst_pt)

@@ -52,6 +52,8 @@ uv run python examples/ex_01_single_column.py
 ## Documentation
 
 - Extending charts: `docs/EXTENDING_CHARTS.md`
+- Chart catalog: `docs/CHART_CATALOG.md`
+- Specification references and rule IDs: `docs/SPECIFICATION_REFERENCES.md`
 
 ## Example Outputs
 

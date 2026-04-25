@@ -7,6 +7,57 @@ from matplotlib.patches import Rectangle
 from ibcs_mpl.theme import FillStyle
 
 
+def _legend_fits_at(
+    ax: matplotlib.axes.Axes,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+) -> bool:
+    """Check whether a legend box in axes-fraction coords avoids the data bounding box."""
+    try:
+        renderer = ax.figure.canvas.get_renderer()
+        data_bbox = ax.dataLim
+        # Convert data bbox to axes fraction
+        inv = ax.transAxes.inverted()
+        ll = inv.transform(ax.transData.transform((data_bbox.x0, data_bbox.y0)))
+        ur = inv.transform(ax.transData.transform((data_bbox.x1, data_bbox.y1)))
+        # Check overlap
+        legend_r = x + width
+        legend_t = y + height
+        data_l, data_b = min(ll[0], ur[0]), min(ll[1], ur[1])
+        data_r, data_t = max(ll[0], ur[0]), max(ll[1], ur[1])
+        overlap = (x < data_r and legend_r > data_l and y < data_t and legend_t > data_b)
+        return not overlap
+    except Exception:
+        return True
+
+
+def find_legend_position(
+    ax: matplotlib.axes.Axes,
+    width: float = 0.18,
+    height: float = 0.20,
+    candidates: Sequence[tuple[float, float]] | None = None,
+) -> tuple[float, float]:
+    """Return (x, y) in axes-fraction coords for a legend that avoids chart data.
+
+    Tries candidate positions in order and returns the first that does not overlap
+    the data bounding box. Falls back to top-right if all overlap.
+    """
+    if candidates is None:
+        candidates = [
+            (0.78, 0.78),  # top-right
+            (0.02, 0.78),  # top-left
+            (0.02, 0.02),  # bottom-left
+            (0.78, 0.02),  # bottom-right
+            (0.40, 0.78),  # top-center
+        ]
+    for x, y in candidates:
+        if _legend_fits_at(ax, x, y, width, height):
+            return x, y
+    return candidates[0]
+
+
 @dataclass(frozen=True, slots=True)
 class LegendItem:
     label: str

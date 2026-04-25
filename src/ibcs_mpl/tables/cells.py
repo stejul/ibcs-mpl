@@ -209,3 +209,91 @@ class VarianceBarCell:
         c = impact_color(self.theme, _impact(v))
 
         ax.plot([mid_x, x1], [y, y], linewidth=6.0, solid_capstyle="butt", color=c)
+
+
+@dataclass(frozen=True)
+class SparklineCell:
+    """Renders a miniature line chart inside a table cell. Value must be a sequence of floats."""
+    color: str = "#3A3A3A"
+    linewidth: float = 1.2
+    pad_x: float = 0.005
+    pad_y: float = 0.15   # fraction of cell height
+    theme: IBCSTheme = DEFAULT_THEME
+    show_endpoints: bool = True  # mark first and last with dot
+
+    def draw(self, ax: matplotlib.axes.Axes, rect: Rect, value: Any) -> None:
+        if value is None:
+            return
+        values = list(value)
+        if len(values) < 2:
+            return
+
+        n = len(values)
+        x0 = rect.x + self.pad_x
+        x1 = rect.x + rect.w - self.pad_x
+        x_coords = [x0 + i * (x1 - x0) / (n - 1) for i in range(n)]
+
+        y_min = min(values)
+        y_max = max(values)
+        if y_min == y_max:
+            y_min -= 0.5
+            y_max += 0.5
+
+        y_low = rect.y + rect.h * self.pad_y
+        y_high = rect.y + rect.h * (1.0 - self.pad_y)
+
+        y_coords = [
+            y_low + (v - y_min) / (y_max - y_min) * (y_high - y_low)
+            for v in values
+        ]
+
+        ax.plot(x_coords, y_coords, linewidth=self.linewidth, color=self.color, solid_capstyle="round")
+
+        if self.show_endpoints:
+            ax.plot(x_coords[0], y_coords[0], marker="o", markersize=3, color=self.color, linewidth=0)
+            ax.plot(x_coords[-1], y_coords[-1], marker="o", markersize=3, color=self.color, linewidth=0)
+
+
+@dataclass(frozen=True)
+class InCellBarCell:
+    """Renders an absolute-value bar inside a table cell. Supports positive-only or mixed values."""
+    max_abs: float       # scale maximum
+    scenario: ScenarioCode = ScenarioCode.AC
+    theme: IBCSTheme = DEFAULT_THEME
+    pad_x: float = 0.01
+    pad_y_frac: float = 0.20   # fraction of cell height as vertical padding
+
+    def draw(self, ax: matplotlib.axes.Axes, rect: Rect, value: Any) -> None:
+        if value is None or self.max_abs <= 0:
+            return
+
+        v = float(value)
+        v = max(-self.max_abs, min(self.max_abs, v))
+
+        style = scenario_style(self.theme, self.scenario)
+
+        # Always use center-split mode (works for both positive and negative values)
+        mid_x = rect.x + rect.w / 2
+        half = rect.w / 2 - self.pad_x
+
+        bar_w = half * (v / self.max_abs)
+        if bar_w >= 0:
+            bar_x = mid_x
+        else:
+            bar_x = mid_x + bar_w
+            bar_w = abs(bar_w)
+
+        bar_y = rect.y + rect.h * self.pad_y_frac
+        bar_h = rect.h * (1.0 - 2 * self.pad_y_frac)
+
+        ax.add_patch(
+            mpatches.Rectangle(
+                (bar_x, bar_y),
+                bar_w,
+                bar_h,
+                facecolor=style.facecolor if style.facecolor else "none",
+                edgecolor=style.edgecolor,
+                hatch=style.hatch,
+                linewidth=style.linewidth,
+            )
+        )
