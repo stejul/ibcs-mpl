@@ -1,12 +1,12 @@
+"""Visual indicators: difference markers, scaling lines, outliers."""
+
 from dataclasses import dataclass, field
 from typing import Sequence
 
 import matplotlib.axes
-import matplotlib.patches as mpatches
-import numpy as np
 
 from ibcs_mpl.theme import IBCSTheme, DEFAULT_THEME, impact_color, scenario_style
-from ibcs_mpl.types import Impact, ScenarioCode
+from ibcs_mpl.types import ScenarioCode
 from ibcs_mpl.semantic import impact_from_value
 
 

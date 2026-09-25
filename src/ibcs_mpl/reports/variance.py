@@ -1,3 +1,5 @@
+"""Variance report table builder with Δ…% and pin cells."""
+
 from typing import Any, Sequence
 
 from ibcs_mpl.tables import Table, ColumnSpec, TableStyle
@@ -9,6 +11,11 @@ from ibcs_mpl.tables.cells import (
     RelativeVariancePinCell,
 )
 from ibcs_mpl.types import ScenarioCode, ReferenceScenario
+
+
+__all__ = [
+    "build_variance_table",
+]
 
 
 def _relative_variance_pct(minuend: float, ref: float) -> float | None:
@@ -59,7 +66,14 @@ def build_variance_table(
     max_abs_dp = max_abs_dp if max_abs_dp > 0 else 1.0
 
     columns = [
-        ColumnSpec(key="name", title="Item", width=2.6, renderer=TextCell(), gap_after=0.30, header_ha="left"),
+        ColumnSpec(
+            key="name",
+            title="Item",
+            width=2.6,
+            renderer=TextCell(),
+            gap_after=0.30,
+            header_ha="left",
+        ),
         ColumnSpec(
             key=minuend_key,
             title=minuend_scenario.value,
@@ -75,7 +89,13 @@ def build_variance_table(
             gap_after=0.25,
             header_ha="right",
         ),
-        ColumnSpec(key="d", title=d_title, width=1.0, renderer=VarianceNumberCell(fmt="{:+,.0f}"), header_ha="right"),
+        ColumnSpec(
+            key="d",
+            title=d_title,
+            width=1.0,
+            renderer=VarianceNumberCell(fmt="{:+,.0f}"),
+            header_ha="right",
+        ),
         ColumnSpec(
             key="dp",
             title=dp_title,

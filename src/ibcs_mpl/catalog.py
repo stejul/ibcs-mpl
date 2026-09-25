@@ -1,6 +1,14 @@
+"""Chart catalog introspection utilities."""
+
 from typing import Iterable
 
 from ibcs_mpl.charts import registry
+
+
+__all__ = [
+    "available_chart_types",
+    "print_chart_catalog",
+]
 
 
 def available_chart_types() -> tuple[str, ...]:

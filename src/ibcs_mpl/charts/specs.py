@@ -1,7 +1,18 @@
+"""Data specifications and validation for chart input data."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
 from ibcs_mpl.types import ScenarioCode, ReferenceScenario
+
+
+__all__ = [
+    "CategorySeries",
+    "ScenarioSeries",
+    "GroupedScenarioSeries",
+    "StackedSeries",
+    "WaterfallSeries",
+]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

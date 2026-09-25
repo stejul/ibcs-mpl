@@ -1,9 +1,19 @@
+"""Chart plugin registration and entry-point loading."""
+
 from collections.abc import Callable
 from importlib import import_module
 from importlib.metadata import entry_points
 from typing import Protocol, runtime_checkable, Any
 
 from ibcs_mpl.charts import ChartRegistry, registry as default_registry
+
+
+__all__ = [
+    "ChartPlugin",
+    "register_plugin",
+    "load_entrypoint_plugins",
+    "load_plugins_from_modules",
+]
 
 
 @runtime_checkable

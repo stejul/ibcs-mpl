@@ -1,3 +1,5 @@
+"""Table cell renderers: text, number, variance, sparkline."""
+
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -10,12 +12,27 @@ from ibcs_mpl.types import Impact, ScenarioCode, ReferenceScenario
 from ibcs_mpl.semantic import impact_from_value
 
 
+__all__ = [
+    "TextCell",
+    "NumberCell",
+    "PercentCell",
+    "VarianceNumberCell",
+    "VariancePercentCell",
+    "RelativeVariancePinCell",
+    "VarianceBarCell",
+    "SparklineCell",
+    "InCellBarCell",
+]
+
+
 def _impact(v: float) -> Impact:
     return impact_from_value(v)
+
 
 @dataclass(frozen=True)
 class VariancePercentCell:
     """Δ…% in tables: + sign, colored like variance pins/bars."""
+
     decimals: int = 1
     theme: IBCSTheme = DEFAULT_THEME
     pad_x: float = 0.01
@@ -49,6 +66,7 @@ class RelativeVariancePinCell:
       - head marker uses scenario notation (AC solid, FC hatched)
       - axis style encodes reference scenario (PY solid light, PL/BU outline)
     """
+
     max_abs_pct: float
     minuend: ScenarioCode = ScenarioCode.AC
     reference: ReferenceScenario = ReferenceScenario.PY
@@ -69,7 +87,13 @@ class RelativeVariancePinCell:
 
         if self.reference == ReferenceScenario.PY:
             # solid light axis
-            ax.plot([x0, x1], [y, y], linewidth=2.0, color=self.theme.measured_light, solid_capstyle="butt")
+            ax.plot(
+                [x0, x1],
+                [y, y],
+                linewidth=2.0,
+                color=self.theme.measured_light,
+                solid_capstyle="butt",
+            )
         else:
             # outline axis (two parallel lines) for PL/BU
             dy = rect.h * 0.06
@@ -104,7 +128,9 @@ class RelativeVariancePinCell:
         x_end = x_mid + half * (v / self.max_abs_pct)
 
         # pin (thin bar)
-        ax.plot([x_mid, x_end], [y, y], linewidth=self.pin_thickness_pt, color=c, solid_capstyle="butt")
+        ax.plot(
+            [x_mid, x_end], [y, y], linewidth=self.pin_thickness_pt, color=c, solid_capstyle="butt"
+        )
 
         # head marker at end
         hw = rect.w * self.head_w_frac
@@ -140,8 +166,15 @@ class TextCell:
             x = rect.x + rect.w - self.pad_x
         else:
             x = rect.x + rect.w / 2
-        ax.text(x, rect.y + rect.h / 2, self.fmt(value),
-                ha=self.ha, va="center", fontsize=self.fontsize, color=self.color)
+        ax.text(
+            x,
+            rect.y + rect.h / 2,
+            self.fmt(value),
+            ha=self.ha,
+            va="center",
+            fontsize=self.fontsize,
+            color=self.color,
+        )
 
 
 @dataclass(frozen=True)
@@ -153,8 +186,15 @@ class NumberCell:
 
     def draw(self, ax: matplotlib.axes.Axes, rect: Rect, value: Any) -> None:
         s = "" if value is None else self.fmt.format(float(value))
-        ax.text(rect.x + rect.w - self.pad_x, rect.y + rect.h / 2, s,
-                ha="right", va="center", fontsize=self.fontsize, color=self.color)
+        ax.text(
+            rect.x + rect.w - self.pad_x,
+            rect.y + rect.h / 2,
+            s,
+            ha="right",
+            va="center",
+            fontsize=self.fontsize,
+            color=self.color,
+        )
 
 
 @dataclass(frozen=True)
@@ -166,8 +206,15 @@ class PercentCell:
 
     def draw(self, ax: matplotlib.axes.Axes, rect: Rect, value: Any) -> None:
         s = "" if value is None else f"{float(value):,.{self.decimals}f}%"
-        ax.text(rect.x + rect.w - self.pad_x, rect.y + rect.h / 2, s,
-                ha="right", va="center", fontsize=self.fontsize, color=self.color)
+        ax.text(
+            rect.x + rect.w - self.pad_x,
+            rect.y + rect.h / 2,
+            s,
+            ha="right",
+            va="center",
+            fontsize=self.fontsize,
+            color=self.color,
+        )
 
 
 @dataclass(frozen=True)
@@ -182,8 +229,15 @@ class VarianceNumberCell:
             return
         v = float(value)
         c = impact_color(self.theme, _impact(v))
-        ax.text(rect.x + rect.w - self.pad_x, rect.y + rect.h / 2, self.fmt.format(v),
-                ha="right", va="center", fontsize=self.fontsize, color=c)
+        ax.text(
+            rect.x + rect.w - self.pad_x,
+            rect.y + rect.h / 2,
+            self.fmt.format(v),
+            ha="right",
+            va="center",
+            fontsize=self.fontsize,
+            color=c,
+        )
 
 
 @dataclass(frozen=True)
@@ -214,10 +268,11 @@ class VarianceBarCell:
 @dataclass(frozen=True)
 class SparklineCell:
     """Renders a miniature line chart inside a table cell. Value must be a sequence of floats."""
+
     color: str = "#3A3A3A"
     linewidth: float = 1.2
     pad_x: float = 0.005
-    pad_y: float = 0.15   # fraction of cell height
+    pad_y: float = 0.15  # fraction of cell height
     theme: IBCSTheme = DEFAULT_THEME
     show_endpoints: bool = True  # mark first and last with dot
 
@@ -242,26 +297,30 @@ class SparklineCell:
         y_low = rect.y + rect.h * self.pad_y
         y_high = rect.y + rect.h * (1.0 - self.pad_y)
 
-        y_coords = [
-            y_low + (v - y_min) / (y_max - y_min) * (y_high - y_low)
-            for v in values
-        ]
+        y_coords = [y_low + (v - y_min) / (y_max - y_min) * (y_high - y_low) for v in values]
 
-        ax.plot(x_coords, y_coords, linewidth=self.linewidth, color=self.color, solid_capstyle="round")
+        ax.plot(
+            x_coords, y_coords, linewidth=self.linewidth, color=self.color, solid_capstyle="round"
+        )
 
         if self.show_endpoints:
-            ax.plot(x_coords[0], y_coords[0], marker="o", markersize=3, color=self.color, linewidth=0)
-            ax.plot(x_coords[-1], y_coords[-1], marker="o", markersize=3, color=self.color, linewidth=0)
+            ax.plot(
+                x_coords[0], y_coords[0], marker="o", markersize=3, color=self.color, linewidth=0
+            )
+            ax.plot(
+                x_coords[-1], y_coords[-1], marker="o", markersize=3, color=self.color, linewidth=0
+            )
 
 
 @dataclass(frozen=True)
 class InCellBarCell:
     """Renders an absolute-value bar inside a table cell. Supports positive-only or mixed values."""
-    max_abs: float       # scale maximum
+
+    max_abs: float  # scale maximum
     scenario: ScenarioCode = ScenarioCode.AC
     theme: IBCSTheme = DEFAULT_THEME
     pad_x: float = 0.01
-    pad_y_frac: float = 0.20   # fraction of cell height as vertical padding
+    pad_y_frac: float = 0.20  # fraction of cell height as vertical padding
 
     def draw(self, ax: matplotlib.axes.Axes, rect: Rect, value: Any) -> None:
         if value is None or self.max_abs <= 0:

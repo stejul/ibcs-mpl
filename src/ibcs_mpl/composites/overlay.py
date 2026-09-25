@@ -1,3 +1,5 @@
+"""Overlay layout for dual-axis charts."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -5,6 +7,11 @@ import matplotlib.axes
 import matplotlib.figure
 
 from ibcs_mpl.charts.base import Chart
+
+
+__all__ = [
+    "draw_overlay",
+]
 
 
 def draw_overlay(
@@ -33,7 +40,7 @@ class ExtendedLayout:
     right: float = 0.97
     top: float = 0.88
     bottom: float = 0.12
-    gap: float = 0.015       # gap between panels
+    gap: float = 0.015  # gap between panels
     break_marker: bool = True  # draw break symbols between panels
 
 
@@ -57,7 +64,7 @@ def draw_extended(
 
     for idx, chart in enumerate(charts):
         x = layout.left + idx * (panel_w + layout.gap)
-        ax = fig.add_axes([x, layout.bottom, panel_w, panel_h])
+        ax = fig.add_axes((x, layout.bottom, panel_w, panel_h))
         chart.draw(ax)
 
         if shared_ylim is not None:
@@ -67,14 +74,16 @@ def draw_extended(
             # Draw two short diagonal slash lines (//) at the right edge of each panel
             # except the last, using axes coordinates with clip_on=False
             ax.plot(
-                [1.0, 1.02], [0.3, 0.5],
+                [1.0, 1.02],
+                [0.3, 0.5],
                 transform=ax.transAxes,
                 linewidth=1.5,
                 color="#888888",
                 clip_on=False,
             )
             ax.plot(
-                [1.0, 1.02], [0.4, 0.6],
+                [1.0, 1.02],
+                [0.4, 0.6],
                 transform=ax.transAxes,
                 linewidth=1.5,
                 color="#888888",

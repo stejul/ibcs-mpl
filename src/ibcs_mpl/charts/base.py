@@ -1,3 +1,5 @@
+"""Base protocol and dataclass for all IBCS charts."""
+
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
@@ -9,13 +11,23 @@ from ibcs_mpl.primitives import add_title_block, minimal_axes
 from ibcs_mpl.titles import MessageBlock, PageTitle
 
 
+__all__ = [
+    "Chart",
+    "ChartBase",
+]
+
+
 @runtime_checkable
 class Chart(Protocol):
+    """Protocol that all IBCS charts must satisfy."""
+
     def draw(self, ax: matplotlib.axes.Axes) -> matplotlib.axes.Axes: ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ChartBase:
+    """Base dataclass with common chart attributes (title, subtitle, theme)."""
+
     title: str | PageTitle
     subtitle: str | None = None
     message: MessageBlock | None = None
@@ -30,7 +42,7 @@ class ChartBase:
         fig = ax.figure
         title_text = self.title.render() if isinstance(self.title, PageTitle) else self.title
         add_title_block(
-            fig,
+            fig,  # type: ignore[arg-type]
             ax,
             title_text,
             self.subtitle,

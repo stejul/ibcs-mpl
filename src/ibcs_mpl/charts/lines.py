@@ -1,3 +1,5 @@
+"""IBCS-styled line charts with scenario-coded series."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -8,6 +10,12 @@ from ibcs_mpl.annotations import LegendItem, draw_inline_legend
 from ibcs_mpl.charts.base import ChartBase
 from ibcs_mpl.theme import scenario_style
 from ibcs_mpl.types import ScenarioCode
+
+
+__all__ = [
+    "ScenarioLineSeries",
+    "LineChart",
+]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

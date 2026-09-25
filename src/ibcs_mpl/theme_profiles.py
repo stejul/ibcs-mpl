@@ -1,4 +1,15 @@
+"""Named theme presets (default, print, accessible, dashboard)."""
+
 from ibcs_mpl.theme import IBCSTheme
+
+
+__all__ = [
+    "default_profile",
+    "print_bw_profile",
+    "color_deficiency_safe_profile",
+    "dashboard_profile",
+    "get_theme_profile",
+]
 
 
 def default_profile() -> IBCSTheme:

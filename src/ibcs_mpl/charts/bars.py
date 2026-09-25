@@ -1,3 +1,5 @@
+"""IBCS-styled bar charts: single, grouped, and stacked."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -10,6 +12,13 @@ from ibcs_mpl.primitives import DataLabels
 from ibcs_mpl.theme import scenario_style
 from ibcs_mpl.types import ScenarioCode
 from ibcs_mpl.validation import validate_stacked_sign_consistency
+
+
+__all__ = [
+    "SingleBarChart",
+    "GroupedBarChart",
+    "StackedBarChart",
+]
 
 
 def _stack_colors(n: int) -> list[str]:

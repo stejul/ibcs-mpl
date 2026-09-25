@@ -1,11 +1,23 @@
+"""Data structures and loaders for scenario-coded series."""
+
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
 from ibcs_mpl.types import ScenarioCode
 
 
+__all__ = [
+    "ScenarioPoint",
+    "ScenarioSeriesData",
+    "from_records",
+    "from_pandas",
+]
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ScenarioPoint:
+    """A single data point with scenario coding."""
+
     category: str
     value: float
     scenario: ScenarioCode = ScenarioCode.AC
@@ -13,6 +25,8 @@ class ScenarioPoint:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ScenarioSeriesData:
+    """A named series of scenario-coded values."""
+
     name: str
     categories: Sequence[str]
     values: Sequence[float]
@@ -33,6 +47,7 @@ def from_records(
     name: str,
     scenario: ScenarioCode = ScenarioCode.AC,
 ) -> ScenarioSeriesData:
+    """Build a ScenarioSeriesData from a sequence of mapping records."""
     categories = [str(row[category_key]) for row in records]
     values = [float(row[value_key]) for row in records]
     out = ScenarioSeriesData(name=name, categories=categories, values=values, scenario=scenario)
@@ -48,6 +63,7 @@ def from_pandas(
     name: str,
     scenario: ScenarioCode = ScenarioCode.AC,
 ) -> ScenarioSeriesData:
+    """Build a ScenarioSeriesData from a pandas-like DataFrame."""
     if not hasattr(df, "__getitem__"):
         raise TypeError("df must support column indexing")
     categories = [str(v) for v in df[category_col].tolist()]

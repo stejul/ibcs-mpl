@@ -1,3 +1,5 @@
+"""Small-multiples grid layout."""
+
 from dataclasses import dataclass
 from math import ceil
 from typing import Sequence, Any
@@ -7,6 +9,13 @@ import matplotlib.figure
 
 from ibcs_mpl.charts.base import Chart
 from ibcs_mpl.titles import PageTitle
+
+
+__all__ = [
+    "SmallMultiplesLayout",
+    "draw_small_multiples",
+    "compute_shared_ylim",
+]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -96,7 +105,7 @@ def draw_small_multiples(
         x = layout.left + col * (ax_w + layout.h_gap)
         slot_top = layout.top - row * (slot_h + layout.v_gap)
         y = slot_top - slot_h
-        ax = fig.add_axes([x, y, ax_w, ax_h])
+        ax = fig.add_axes((x, y, ax_w, ax_h))
         chart.draw(ax)
         if shared_ylim is not None:
             ax.set_ylim(*shared_ylim)

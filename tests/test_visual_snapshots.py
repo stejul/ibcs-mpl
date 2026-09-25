@@ -1,10 +1,12 @@
 import hashlib
 import json
+from typing import Any
 
 import matplotlib
 
 matplotlib.use("Agg")
 
+import matplotlib.axes
 import matplotlib.pyplot as plt
 
 from ibcs_mpl.charts import (
@@ -22,8 +24,8 @@ def _rounded(values: list[float], digits: int = 4) -> list[float]:
     return [round(float(v), digits) for v in values]
 
 
-def _artist_snapshot(ax) -> str:
-    payload: dict[str, object] = {
+def _artist_snapshot(ax: matplotlib.axes.Axes) -> str:
+    payload: dict[str, Any] = {
         "xlim": _rounded([*ax.get_xlim()]),
         "ylim": _rounded([*ax.get_ylim()]),
         "xticks": _rounded(list(ax.get_xticks())),
@@ -35,20 +37,20 @@ def _artist_snapshot(ax) -> str:
     for patch in ax.patches:
         payload["patches"].append(
             {
-                "x": round(float(patch.get_x()), 4),
-                "y": round(float(patch.get_y()), 4),
-                "w": round(float(patch.get_width()), 4),
-                "h": round(float(patch.get_height()), 4),
-                "fc": tuple(round(float(v), 3) for v in patch.get_facecolor()),
-                "ec": tuple(round(float(v), 3) for v in patch.get_edgecolor()),
+                "x": round(float(patch.get_x()), 4),  # type: ignore[attr-defined]
+                "y": round(float(patch.get_y()), 4),  # type: ignore[attr-defined]
+                "w": round(float(patch.get_width()), 4),  # type: ignore[attr-defined]
+                "h": round(float(patch.get_height()), 4),  # type: ignore[attr-defined]
+                "fc": tuple(round(float(v), 3) for v in patch.get_facecolor()),  # type: ignore[arg-type]
+                "ec": tuple(round(float(v), 3) for v in patch.get_edgecolor()),  # type: ignore[arg-type]
                 "lw": round(float(patch.get_linewidth()), 3),
                 "hatch": patch.get_hatch() or "",
             }
         )
 
     for line in ax.lines:
-        x_data = _rounded([float(v) for v in line.get_xdata()])
-        y_data = _rounded([float(v) for v in line.get_ydata()])
+        x_data = _rounded([float(v) for v in line.get_xdata()])  # type: ignore
+        y_data = _rounded([float(v) for v in line.get_ydata()])  # type: ignore
         payload["lines"].append(
             {
                 "x": x_data,
@@ -117,7 +119,7 @@ def test_visual_snapshots() -> None:
 
     for key, chart in charts.items():
         fig, ax = plt.subplots(figsize=(6.0, 3.0))
-        chart.draw(ax)
+        chart.draw(ax)  # type: ignore[attr-defined]
         digest = _artist_snapshot(ax)
         plt.close(fig)
         assert digest == EXPECTED_SNAPSHOTS[key]

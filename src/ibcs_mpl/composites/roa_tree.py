@@ -1,3 +1,5 @@
+"""Return-on-Assets tree composite layout."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -16,6 +18,13 @@ from ibcs_mpl.composites.units import pt_to_fig_y
 from ibcs_mpl.charts.columns import SingleColumnChart
 from ibcs_mpl.theme import IBCSTheme
 from ibcs_mpl.types import ScenarioCode
+
+
+__all__ = [
+    "ROATreeData",
+    "ROATreeLayout",
+    "build_roa_tree",
+]
 
 
 @dataclass(frozen=True)

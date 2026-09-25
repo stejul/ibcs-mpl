@@ -1,12 +1,23 @@
+"""Table geometry types and style definitions."""
+
 from dataclasses import dataclass
 from typing import Any, Protocol, Literal
 
 import matplotlib.axes
 
 
+__all__ = [
+    "Rect",
+    "CellRenderer",
+    "ColumnSpec",
+    "TableStyle",
+]
+
+
 @dataclass(frozen=True, slots=True)
 class Rect:
     """Rectangle in axes coordinates [0..1]."""
+
     x: float
     y: float
     w: float
@@ -14,14 +25,18 @@ class Rect:
 
 
 class CellRenderer(Protocol):
+    """Protocol for table cell renderers."""
+
     def draw(self, ax: matplotlib.axes.Axes, rect: Rect, value: Any) -> None: ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ColumnSpec:
+    """Column definition for a report table."""
+
     key: str
     title: str
-    width: float               # relative width units
+    width: float  # relative width units
     renderer: CellRenderer
 
     gap_after: float = 0.0
@@ -30,6 +45,8 @@ class ColumnSpec:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class TableStyle:
+    """Visual styling parameters for report tables."""
+
     header_height: float = 0.14
     row_height: float = 0.11
     pad_x: float = 0.01

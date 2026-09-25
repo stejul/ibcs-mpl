@@ -1,3 +1,5 @@
+"""IBCS-styled grouped column charts with overlapping bars."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -9,6 +11,11 @@ from ibcs_mpl.charts.specs import GroupedScenarioSeries
 from ibcs_mpl.primitives import DataLabels
 from ibcs_mpl.theme import scenario_style
 from ibcs_mpl.types import ScenarioCode
+
+
+__all__ = [
+    "GroupedColumnChart",
+]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

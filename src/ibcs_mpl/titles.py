@@ -1,9 +1,18 @@
+"""Page title and message block layout."""
+
 from dataclasses import dataclass
 
 import matplotlib.axes
 import matplotlib.figure
 
 from ibcs_mpl.theme import IBCSTheme
+
+
+__all__ = [
+    "PageTitle",
+    "MessageBlock",
+    "draw_title_message_block",
+]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -91,7 +100,7 @@ def draw_title_message_block(
     if required_above_axes > available_above_axes:
         overflow = required_above_axes - available_above_axes
         new_height = max(0.05, bbox.height - overflow)
-        ax.set_position([bbox.x0, bbox.y0, bbox.width, new_height])
+        ax.set_position((bbox.x0, bbox.y0, bbox.width, new_height))
         bbox = ax.get_position()
         x = bbox.x0
 

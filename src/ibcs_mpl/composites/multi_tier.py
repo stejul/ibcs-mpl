@@ -1,3 +1,5 @@
+"""Multi-tier figure layout for stacked charts."""
+
 from dataclasses import dataclass
 from typing import Sequence, Any
 
@@ -5,6 +7,12 @@ import matplotlib.figure
 
 from ibcs_mpl.charts.base import Chart
 from ibcs_mpl.titles import PageTitle
+
+
+__all__ = [
+    "MultiTierLayout",
+    "draw_multi_tier",
+]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -90,6 +98,6 @@ def draw_multi_tier(
         y = y_top - slot_h
         title_band = _chart_title_band(fig, chart, min_band=layout.min_title_band)
         ax_h = max(0.03, slot_h - title_band)
-        ax = fig.add_axes([layout.left, y, layout.right - layout.left, ax_h])
+        ax = fig.add_axes((layout.left, y, layout.right - layout.left, ax_h))
         chart.draw(ax)
         y_top = y - layout.tier_gap

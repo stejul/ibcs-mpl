@@ -1,3 +1,5 @@
+"""Low-level drawing primitives shared across charts."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -9,7 +11,16 @@ from ibcs_mpl.theme import IBCSTheme
 from ibcs_mpl.titles import MessageBlock, draw_title_message_block
 
 
+__all__ = [
+    "minimal_axes",
+    "add_title_block",
+    "DataLabels",
+    "rect",
+]
+
+
 def minimal_axes(ax: matplotlib.axes.Axes, theme: IBCSTheme) -> None:
+    """Remove spines and grid to create a clean IBCS axis."""
     ax.grid(False)
     ax.set_axisbelow(True)
     ax.spines["top"].set_visible(False)
@@ -30,6 +41,7 @@ def add_title_block(
     top_pad: float = 0.012,
     title_to_subtitle_gap: float = 0.020,
 ) -> None:
+    """Draw title, subtitle, and optional message block above an Axes."""
     draw_title_message_block(
         fig,
         ax,
@@ -44,6 +56,8 @@ def add_title_block(
 
 @dataclass(frozen=True)
 class DataLabels:
+    """Configurable data-label formatter for bar/column values."""
+
     fmt: str = "{:,.0f}"
 
     def draw_above_bars(
@@ -97,6 +111,7 @@ def rect(
     linewidth: float,
     hatch: str | None,
 ) -> mpatches.Rectangle:
+    """Create a matplotlib Rectangle patch."""
     return mpatches.Rectangle(
         (x, y), w, h, facecolor=facecolor, edgecolor=edgecolor, linewidth=linewidth, hatch=hatch
     )

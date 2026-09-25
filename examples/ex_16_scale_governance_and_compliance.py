@@ -8,14 +8,14 @@ Demonstrates:
 - ComplianceEngine: IBCS rule checker
 - format_report: human-readable compliance output
 """
+
 import matplotlib.pyplot as plt
 
-from ibcs_mpl.annotations import draw_inline_legend, find_legend_position
-from ibcs_mpl.charts import SingleColumnChart
+from ibcs_mpl.annotations import draw_inline_legend, find_legend_position, LegendItem
+from ibcs_mpl.charts import GroupedColumnChart, SingleColumnChart
 from ibcs_mpl.compliance import ComplianceEngine, format_report
 from ibcs_mpl.composites import SmallMultiplesLayout, compute_shared_ylim, draw_small_multiples
 from ibcs_mpl.theme import DEFAULT_THEME, scenario_style
-from ibcs_mpl.annotations import LegendItem
 from ibcs_mpl.types import ScenarioCode
 
 # ── Scale governance ────────────────────────────────────────────────────────
@@ -24,12 +24,12 @@ from ibcs_mpl.types import ScenarioCode
 
 COUNTRIES = ["DE", "AT", "CH", "NL", "BE", "PL"]
 VALUES_BY_COUNTRY = [
-    [42, 48, 51, 55],   # DE — large
-    [12, 14, 13, 15],   # AT — small
-    [28, 31, 30, 33],   # CH — medium
-    [19, 22, 21, 24],   # NL — small-medium
-    [8, 9, 11, 10],     # BE — small
-    [35, 38, 40, 44],   # PL — medium-large
+    [42, 48, 51, 55],  # DE — large
+    [12, 14, 13, 15],  # AT — small
+    [28, 31, 30, 33],  # CH — medium
+    [19, 22, 21, 24],  # NL — small-medium
+    [8, 9, 11, 10],  # BE — small
+    [35, 38, 40, 44],  # PL — medium-large
 ]
 
 charts = [
@@ -57,14 +57,17 @@ for c, ax in zip(charts, temp_axes):
 ylim = compute_shared_ylim(temp_axes)
 plt.close(temp_fig)
 
-draw_small_multiples(fig2, charts, layout=SmallMultiplesLayout(columns=3, top=0.90),
-                     shared_ylim=ylim)
-fig2.suptitle(f"Small multiples — WITH shared scale ylim={ylim[0]:.0f}–{ylim[1]:.0f} (honest!)",
-              fontsize=10, y=0.97)
+draw_small_multiples(
+    fig2, charts, layout=SmallMultiplesLayout(columns=3, top=0.90), shared_ylim=ylim
+)
+fig2.suptitle(
+    f"Small multiples — WITH shared scale ylim={ylim[0]:.0f}–{ylim[1]:.0f} (honest!)",
+    fontsize=10,
+    y=0.97,
+)
 
 # ── Legend collision detection ──────────────────────────────────────────────
 fig3, ax = plt.subplots(figsize=(8, 4.5))
-from ibcs_mpl.charts import GroupedColumnChart
 gc = GroupedColumnChart(
     title="Legend placement — collision-aware",
     subtitle="legend auto-positioned away from data",

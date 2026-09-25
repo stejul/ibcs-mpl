@@ -1,22 +1,33 @@
+"""IBCS relative-variance pin charts (horizontal and vertical)."""
+
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
 import numpy as np
 import matplotlib.axes
 import matplotlib.patches as mpatches
 
-from ibcs_mpl.theme import impact_color, scenario_style
+from ibcs_mpl.theme import IBCSTheme, impact_color, scenario_style
 from ibcs_mpl.types import ScenarioCode, ReferenceScenario
 from ibcs_mpl.charts.base import ChartBase
 from ibcs_mpl.charts.specs import RelativeVarianceSeries
 from ibcs_mpl.semantic import impact_from_value
 
 
+__all__ = [
+    "RelativeVariancePinChart",
+    "VerticalPinChart",
+]
+
+
+_PIN_LABEL_BBOX: dict[str, Any] = dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.8)
+
+
 def _draw_reference_axis(
     ax: matplotlib.axes.Axes,
     *,
     reference_scenario: ReferenceScenario,
-    theme,
+    theme: IBCSTheme,
     orient: str = "h",
 ) -> None:
     """Draw the zero-reference line(s). orient='h' → axhline, orient='v' → axvline."""
@@ -34,16 +45,16 @@ def _draw_reference_axis(
 @dataclass(frozen=True, slots=True, kw_only=True)
 class RelativeVariancePinChart(ChartBase):
     categories: Sequence[str] = ()
-    rel_variance_pct: Sequence[float] = ()   # e.g. +12.5 means +12.5%
+    rel_variance_pct: Sequence[float] = ()  # e.g. +12.5 means +12.5%
     minuend_scenario: ScenarioCode = ScenarioCode.AC
     reference_scenario: ReferenceScenario = ReferenceScenario.PY
 
     pin_width: float = 0.10
     head_height_pct: float = 1.0  # head marker size in "percentage points"
     label_offset_pos: int = 5
-    label_offset_neg: int = -10       # points
+    label_offset_neg: int = -10  # points
     ylim_pad_top: float = 4.0
-    ylim_pad_bottom: float = 12.0    # percentage points
+    ylim_pad_bottom: float = 12.0  # percentage points
 
     def draw(self, ax: matplotlib.axes.Axes) -> matplotlib.axes.Axes:
         RelativeVarianceSeries(
@@ -57,8 +68,6 @@ class RelativeVariancePinChart(ChartBase):
 
         x = np.arange(len(self.categories))
         y = np.array(self.rel_variance_pct, dtype=float)
-
-        bbox = dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.8)
 
         _draw_reference_axis(ax, reference_scenario=self.reference_scenario, theme=self.theme)
 
@@ -97,14 +106,14 @@ class RelativeVariancePinChart(ChartBase):
             # Label outside in direction of change :contentReference[oaicite:15]{index=15}
             ax.annotate(
                 f"{yi:+.1f}%",
-                (xi, yi),
+                (float(xi), float(yi)),
                 xytext=(0, dy),
                 textcoords="offset points",
                 ha="center",
                 va=va,
                 fontsize=self.theme.label_size,
                 color=c,
-                bbox=bbox
+                bbox=_PIN_LABEL_BBOX,
             )
 
         low = min(-30.0, float(y.min()) - self.ylim_pad_bottom)
@@ -119,12 +128,12 @@ class RelativeVariancePinChart(ChartBase):
 @dataclass(frozen=True, slots=True, kw_only=True)
 class VerticalPinChart(ChartBase):
     categories: Sequence[str] = ()
-    rel_variance_pct: Sequence[float] = ()   # e.g. +12.5 means +12.5%
+    rel_variance_pct: Sequence[float] = ()  # e.g. +12.5 means +12.5%
     minuend_scenario: ScenarioCode = ScenarioCode.AC
     reference_scenario: ReferenceScenario = ReferenceScenario.PY
 
     pin_height: float = 0.10
-    head_width_pct: float = 1.0   # head marker width in "percentage points"
+    head_width_pct: float = 1.0  # head marker width in "percentage points"
     label_offset_pos: int = 5
     label_offset_neg: int = -10
     xlim_pad_right: float = 4.0
@@ -143,9 +152,9 @@ class VerticalPinChart(ChartBase):
         y = np.arange(len(self.categories))
         x = np.array(self.rel_variance_pct, dtype=float)
 
-        bbox = dict(boxstyle="round,pad=0.15", fc="white", ec="none", alpha=0.8)
-
-        _draw_reference_axis(ax, reference_scenario=self.reference_scenario, theme=self.theme, orient="v")
+        _draw_reference_axis(
+            ax, reference_scenario=self.reference_scenario, theme=self.theme, orient="v"
+        )
 
         head_style = scenario_style(self.theme, self.minuend_scenario)
 
@@ -180,14 +189,14 @@ class VerticalPinChart(ChartBase):
             # Label outside in direction of change
             ax.annotate(
                 f"{xi:+.1f}%",
-                (xi, yi),
+                (float(xi), float(yi)),
                 xytext=(dx, 0),
                 textcoords="offset points",
                 ha=ha,
                 va="center",
                 fontsize=self.theme.label_size,
                 color=c,
-                bbox=bbox,
+                bbox=_PIN_LABEL_BBOX,
             )
 
         left = min(-30.0, float(x.min()) - self.xlim_pad_left)

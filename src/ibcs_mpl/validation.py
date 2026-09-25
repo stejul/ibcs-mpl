@@ -1,9 +1,21 @@
+"""Chart input validation helpers."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
 
+__all__ = [
+    "ValidationIssue",
+    "validate_stacked_sign_consistency",
+    "validate_ratio_widths",
+    "validate_scenario_order",
+]
+
+
 @dataclass(frozen=True, slots=True)
 class ValidationIssue:
+    """A single chart input validation problem."""
+
     code: str
     message: str
 
@@ -11,6 +23,7 @@ class ValidationIssue:
 def validate_stacked_sign_consistency(
     stack_values: Sequence[Sequence[float]],
 ) -> list[ValidationIssue]:
+    """Ensure no single stack mixes positive and negative values."""
     issues: list[ValidationIssue] = []
     for series_idx, series in enumerate(stack_values):
         if not series:
@@ -28,6 +41,7 @@ def validate_stacked_sign_consistency(
 
 
 def validate_ratio_widths(width_basic: float, width_ratio: float) -> list[ValidationIssue]:
+    """Check that ratio width is half of basic width per IBCS."""
     issues: list[ValidationIssue] = []
     if width_basic <= 0 or width_ratio <= 0:
         issues.append(ValidationIssue(code="WIDTH_NON_POSITIVE", message="widths must be positive"))
@@ -44,6 +58,7 @@ def validate_ratio_widths(width_basic: float, width_ratio: float) -> list[Valida
 
 
 def validate_scenario_order(order: Sequence[str]) -> list[ValidationIssue]:
+    """Warn if reference scenarios appear before primary scenarios."""
     issues: list[ValidationIssue] = []
     # Recommended AC/FC in foreground; PY/PL as reference.
     if len(order) >= 2 and order[0] in {"PY", "PL", "BU"} and order[1] in {"AC", "FC"}:

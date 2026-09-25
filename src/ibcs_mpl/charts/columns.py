@@ -1,14 +1,21 @@
+"""IBCS-styled single column charts."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
 import numpy as np
 import matplotlib.axes
 
-from ibcs_mpl.theme import scenario_style
+from ibcs_mpl.theme import IBCSTheme, scenario_style
 from ibcs_mpl.types import ScenarioCode
 from ibcs_mpl.primitives import DataLabels
 from ibcs_mpl.charts.base import ChartBase
 from ibcs_mpl.charts.specs import ScenarioSeries
+
+
+__all__ = [
+    "SingleColumnChart",
+]
 
 
 def _draw_single_columns(
@@ -19,7 +26,7 @@ def _draw_single_columns(
     scenario: ScenarioCode,
     labels: DataLabels | None,
     width: float,
-    theme,
+    theme: IBCSTheme,
 ) -> None:
     x = np.arange(len(categories))
     st = scenario_style(theme, scenario)

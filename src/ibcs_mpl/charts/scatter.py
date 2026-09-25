@@ -1,5 +1,7 @@
+"""IBCS-styled scatter and bubble charts."""
+
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
 import matplotlib.axes
 import numpy as np
@@ -9,13 +11,16 @@ from ibcs_mpl.theme import scenario_style
 from ibcs_mpl.types import ScenarioCode
 
 
+_QUADRANT_LINE_COLOR = "#CCCCCC"
+_QUADRANT_LINE_WIDTH = 0.6
+
 __all__ = [
     "ScatterChart",
     "BubbleChart",
 ]
 
 
-def _validate_equal_lengths(**named_seqs: Sequence) -> None:
+def _validate_equal_lengths(**named_seqs: Sequence[Any]) -> None:
     lengths = {name: len(seq) for name, seq in named_seqs.items()}
     if any(v == 0 for v in lengths.values()):
         raise ValueError(f"All sequences must be non-empty: {lengths}")
@@ -24,7 +29,13 @@ def _validate_equal_lengths(**named_seqs: Sequence) -> None:
         raise ValueError(f"All sequences must have the same length, got {names}")
 
 
-def _plot_points(ax: matplotlib.axes.Axes, x, y, sizes, st) -> None:
+def _plot_points(
+    ax: matplotlib.axes.Axes,
+    x: Sequence[float],
+    y: Sequence[float],
+    sizes: Any,
+    st: Any,
+) -> None:
     ax.scatter(
         list(x),
         list(y),
@@ -36,7 +47,13 @@ def _plot_points(ax: matplotlib.axes.Axes, x, y, sizes, st) -> None:
     )
 
 
-def _annotate_labels(ax: matplotlib.axes.Axes, x, y, labels: Sequence[str], fontsize: float) -> None:
+def _annotate_labels(
+    ax: matplotlib.axes.Axes,
+    x: Sequence[float],
+    y: Sequence[float],
+    labels: Sequence[str],
+    fontsize: float,
+) -> None:
     for xi, yi, lbl in zip(x, y, labels):
         ax.annotate(
             lbl,
@@ -49,7 +66,9 @@ def _annotate_labels(ax: matplotlib.axes.Axes, x, y, labels: Sequence[str], font
         )
 
 
-def _apply_axes_labels(ax: matplotlib.axes.Axes, x_label: str, y_label: str, fontsize: float) -> None:
+def _apply_axes_labels(
+    ax: matplotlib.axes.Axes, x_label: str, y_label: str, fontsize: float
+) -> None:
     if x_label:
         ax.set_xlabel(x_label, fontsize=fontsize)
     if y_label:
@@ -80,8 +99,8 @@ class ScatterChart(ChartBase):
             _annotate_labels(ax, self.x_values, self.y_values, self.labels, self.theme.label_size)
 
         if self.show_quadrants:
-            ax.axhline(0, color="#CCCCCC", linewidth=0.6, zorder=0)
-            ax.axvline(0, color="#CCCCCC", linewidth=0.6, zorder=0)
+            ax.axhline(0, color=_QUADRANT_LINE_COLOR, linewidth=_QUADRANT_LINE_WIDTH, zorder=0)
+            ax.axvline(0, color=_QUADRANT_LINE_COLOR, linewidth=_QUADRANT_LINE_WIDTH, zorder=0)
 
         _apply_axes_labels(ax, self.x_label, self.y_label, self.theme.label_size)
         return ax

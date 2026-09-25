@@ -1,10 +1,12 @@
 import hashlib
 import json
+from typing import Any
 
 import matplotlib
 
 matplotlib.use("Agg")
 
+import matplotlib.figure
 import matplotlib.pyplot as plt
 
 from ibcs_mpl.composites.roa_tree import ROATreeData, build_roa_tree
@@ -15,8 +17,8 @@ def _round4(value: float) -> float:
     return round(float(value), 4)
 
 
-def _roa_tree_signature(fig: plt.Figure) -> str:
-    payload: dict[str, object] = {
+def _roa_tree_signature(fig: matplotlib.figure.Figure) -> str:
+    payload: dict[str, Any] = {
         "fig_size": [_round4(v) for v in fig.get_size_inches()],
         "axes": [],
         "figure_texts": [],
@@ -48,8 +50,8 @@ def _roa_tree_signature(fig: plt.Figure) -> str:
                 "s": text.get_text(),
                 "x": _round4(text.get_position()[0]),
                 "y": _round4(text.get_position()[1]),
-                "ha": text.get_ha(),
-                "va": text.get_va(),
+                "ha": text.get_ha(),  # type: ignore[attr-defined]
+                "va": text.get_va(),  # type: ignore[attr-defined]
             }
         )
 

@@ -1,3 +1,5 @@
+"""IBCS-styled stacked column charts."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -9,6 +11,11 @@ from ibcs_mpl.charts.base import ChartBase
 from ibcs_mpl.charts.specs import StackedSeries
 from ibcs_mpl.theme import FillStyle
 from ibcs_mpl.validation import validate_stacked_sign_consistency
+
+
+__all__ = [
+    "StackedColumnChart",
+]
 
 
 def _series_shades(n: int) -> list[str]:

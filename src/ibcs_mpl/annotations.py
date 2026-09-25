@@ -1,3 +1,5 @@
+"""Legend helpers, inline legends, and comment reference annotations."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -5,6 +7,15 @@ import matplotlib.axes
 from matplotlib.patches import Rectangle
 
 from ibcs_mpl.theme import FillStyle
+
+
+__all__ = [
+    "LegendItem",
+    "CommentRef",
+    "find_legend_position",
+    "draw_inline_legend",
+    "draw_comment_refs",
+]
 
 
 def _legend_fits_at(
@@ -16,7 +27,7 @@ def _legend_fits_at(
 ) -> bool:
     """Check whether a legend box in axes-fraction coords avoids the data bounding box."""
     try:
-        renderer = ax.figure.canvas.get_renderer()
+        ax.figure.canvas.get_renderer()  # type: ignore[attr-defined]
         data_bbox = ax.dataLim
         # Convert data bbox to axes fraction
         inv = ax.transAxes.inverted()
@@ -27,7 +38,7 @@ def _legend_fits_at(
         legend_t = y + height
         data_l, data_b = min(ll[0], ur[0]), min(ll[1], ur[1])
         data_r, data_t = max(ll[0], ur[0]), max(ll[1], ur[1])
-        overlap = (x < data_r and legend_r > data_l and y < data_t and legend_t > data_b)
+        overlap = x < data_r and legend_r > data_l and y < data_t and legend_t > data_b
         return not overlap
     except Exception:
         return True

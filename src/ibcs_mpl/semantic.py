@@ -1,4 +1,11 @@
+"""Semantic analysis helpers (impact, variance direction)."""
+
 from ibcs_mpl.types import Impact
+
+
+__all__ = [
+    "impact_from_value",
+]
 
 
 def impact_from_value(value: float) -> Impact:

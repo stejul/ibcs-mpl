@@ -1,7 +1,14 @@
+"""Chart registry for plugin-based chart discovery."""
+
 from collections.abc import Callable
 from typing import Any
 
 from ibcs_mpl.charts.base import Chart
+
+
+__all__ = [
+    "ChartRegistry",
+]
 
 
 ChartBuilder = Callable[..., Chart]

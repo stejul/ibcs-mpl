@@ -1,3 +1,5 @@
+"""Table renderer and layout engine."""
+
 from dataclasses import dataclass
 from typing import Any, Sequence
 
@@ -5,6 +7,11 @@ import matplotlib.axes
 from matplotlib.patches import Rectangle
 
 from ibcs_mpl.tables.types import ColumnSpec, Rect, TableStyle
+
+
+__all__ = [
+    "Table",
+]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -24,7 +31,9 @@ class Table:
         total_units = sum(c.width + c.gap_after for c in cols)
 
         header_y0 = 1.0 - st.header_height
-        ax.add_patch(Rectangle((0, header_y0), 1, st.header_height, fill=False, linewidth=st.outer_lw))
+        ax.add_patch(
+            Rectangle((0, header_y0), 1, st.header_height, fill=False, linewidth=st.outer_lw)
+        )
 
         x0 = 0.0
         for c in cols:
@@ -37,7 +46,14 @@ class Table:
             else:
                 hx = x0 + col_w / 2.0
 
-            ax.text(hx, header_y0 + st.header_height / 2.0, c.title, ha=c.header_ha, va="center", fontsize=st.header_fontsize)
+            ax.text(
+                hx,
+                header_y0 + st.header_height / 2.0,
+                c.title,
+                ha=c.header_ha,
+                va="center",
+                fontsize=st.header_fontsize,
+            )
             x0 += col_w + (c.gap_after / total_units)
 
         n_rows = len(rows)
@@ -47,7 +63,9 @@ class Table:
             y0 = body_top - (row_idx + 1) * st.row_height
 
             if row_idx % 2 == 1:
-                ax.add_patch(Rectangle((0, y0), 1, st.row_height, linewidth=0, alpha=st.zebra_alpha))
+                ax.add_patch(
+                    Rectangle((0, y0), 1, st.row_height, linewidth=0, alpha=st.zebra_alpha)
+                )
 
             ax.plot([0, 1], [y0, y0], linewidth=st.row_lw)
 
@@ -59,5 +77,7 @@ class Table:
                 x0 += col_w + (c.gap_after / total_units)
 
         body_h = st.row_height * n_rows
-        ax.add_patch(Rectangle((0, body_top - body_h), 1, body_h, fill=False, linewidth=st.outer_lw))
+        ax.add_patch(
+            Rectangle((0, body_top - body_h), 1, body_h, fill=False, linewidth=st.outer_lw)
+        )
         return ax

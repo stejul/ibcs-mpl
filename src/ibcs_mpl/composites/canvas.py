@@ -1,3 +1,6 @@
+"""Canvas layout with nodes, operators, and edge routing."""
+
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Sequence, Literal
 
@@ -12,6 +15,17 @@ from matplotlib.lines import Line2D
 
 from ibcs_mpl.types import Point
 from ibcs_mpl.composites.units import pt_to_fig_x, pt_to_fig_y
+
+
+__all__ = [
+    "title_block_h_from_pt",
+    "Box",
+    "Node",
+    "OperatorNode",
+    "Edge",
+    "CanvasStyle",
+    "draw_canvas",
+]
 
 
 def title_block_h_from_pt(fig: matplotlib.figure.Figure, title_size_pt: float) -> float:
@@ -47,13 +61,13 @@ class Box:
     def right_at(self, frac: float) -> Point:
         return (self.left + self.width, self.bottom + self.height * frac)
 
-    def top(self) -> Point:
+    def top(self) -> float:
         return self.bottom + self.height
 
-    def mid_y(self) -> Point:
+    def mid_y(self) -> float:
         return self.bottom + self.height / 2.0
 
-    def mid_x(self) -> Point:
+    def mid_x(self) -> float:
         return self.left + self.width / 2.0
 
 
@@ -203,12 +217,12 @@ def draw_canvas(
         )
 
         ax = fig.add_axes(
-            [
+            (
                 b.left + style.inset_pad_x,
                 b.bottom + style.inset_pad_bottom,
                 b.width - 2 * style.inset_pad_x,
                 b.height - style.title_block_h - style.inset_pad_bottom - style.inset_pad_top,
-            ]
+            )
         )
         n.chart.draw(ax)
 
@@ -231,8 +245,6 @@ def draw_canvas(
 
     # Group edges by operator so we draw each trunk exactly once.
     # op_id -> list of (src_node, dst_node)
-    from collections import defaultdict
-
     op_edges: dict[str, list[tuple[Node, Node]]] = defaultdict(list)
     direct_edges: list[tuple[Node, Node]] = []
 
@@ -248,11 +260,11 @@ def draw_canvas(
     # (simple two-segment elbow using the x midpoint as the bend column).
     for src_node, dst_node in direct_edges:
         a = src_node.box.mid_right()
-        b = dst_node.box.mid_left()
-        mid_x = (a[0] + b[0]) / 2.0
+        dst_pt = dst_node.box.mid_left()
+        mid_x = (a[0] + dst_pt[0]) / 2.0
         add_segment(a, (mid_x, a[1]))
-        add_segment((mid_x, a[1]), (mid_x, b[1]))
-        add_segment((mid_x, b[1]), b)
+        add_segment((mid_x, a[1]), (mid_x, dst_pt[1]))
+        add_segment((mid_x, dst_pt[1]), dst_pt)
 
     # Operator edges: orthogonal H-tree routing.
     #

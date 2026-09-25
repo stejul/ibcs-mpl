@@ -1,3 +1,5 @@
+"""IBCS-styled waterfall charts (vertical and horizontal)."""
+
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -9,6 +11,12 @@ from ibcs_mpl.charts.specs import WaterfallSeries
 from ibcs_mpl.semantic import impact_from_value
 from ibcs_mpl.theme import impact_color, scenario_style
 from ibcs_mpl.types import ScenarioCode
+
+
+__all__ = [
+    "VerticalWaterfallChart",
+    "HorizontalWaterfallChart",
+]
 
 
 def _waterfall_geometry(

@@ -1,3 +1,4 @@
+import sys
 import types
 
 from ibcs_mpl.charts import ChartRegistry, SingleColumnChart
@@ -21,9 +22,7 @@ def test_load_plugins_from_modules() -> None:
     def register(registry: ChartRegistry) -> None:
         registry.register("line_alias", SingleColumnChart)
 
-    module.register = register
-
-    import sys
+    setattr(module, "register", register)
 
     sys.modules[module_name] = module
 
